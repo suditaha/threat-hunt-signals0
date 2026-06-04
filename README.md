@@ -302,6 +302,301 @@ A total of **23 successful RDP authentication events** originated from Uruguay.
 
 ---
 
+# Phase 9 – Post-Compromise Activity
+
+## Objective
+
+Determine whether the successful RDP authentication resulted in interactive user activity.
+
+## Findings
+
+Following the first successful authentication from Uruguay, several routine Windows and browser processes were observed. Most were identified as normal session startup activity and Microsoft Edge helper processes.
+
+The first process that clearly indicated purposeful user interaction was:
+
+```text
+notepad.exe
+```
+
+Unlike browser child processes, Notepad is not typically launched automatically during logon and represents the first clear sign of direct operator interaction with the compromised system.
+
+### KQL Query
+
+```kql
+DeviceProcessEvents
+| where DeviceName == "azwks-phtg-02"
+| where TimeGenerated between (datetime(2025-12-11T20:38:00Z) .. datetime(2025-12-11T20:50:00Z))
+| order by TimeGenerated asc
+```
+
+---
+
+# Phase 10 – Internal Reconnaissance
+
+## Objective
+
+Identify files accessed by the attacker following initial access.
+
+## Findings
+
+Multiple text documents were opened during the session. One file stood out as particularly valuable from an attacker perspective:
+
+```text
+notes_sarah.txt
+```
+
+The file appeared to contain internal engineer notes and operational information.
+
+Documents of this type frequently contain:
+
+- Password references
+- Internal hostnames
+- VPN information
+- Administrative shortcuts
+- Troubleshooting procedures
+
+Such information can significantly reduce attacker effort during post-compromise operations.
+
+---
+
+# Phase 11 – Malware Staging
+
+## Objective
+
+Determine whether malicious files were introduced onto the system.
+
+## Findings
+
+Investigation revealed a suspicious file rename sequence:
+
+```text
+Sarah_Chen_Notes.txt
+```
+
+↓
+
+```text
+Sarah_Chen_Notes.exe.txt
+```
+
+↓
+
+```text
+Sarah_Chen_Notes.exe
+```
+
+This sequence demonstrates classic double-extension evasion designed to disguise an executable as a benign text document.
+
+### KQL Query
+
+```kql
+DeviceFileEvents
+| where ActionType == "FileRenamed"
+| where PreviousFileName contains "Sarah"
+| project TimeGenerated, PreviousFileName, FileName
+| order by TimeGenerated asc
+```
+
+### MITRE ATT&CK
+
+| Technique | Description |
+|------------|------------|
+| T1036 | Masquerading |
+
+---
+
+# Phase 12 – Payload Identification
+
+## Objective
+
+Identify the malware payload.
+
+## Findings
+
+SHA256 analysis identified the malicious payload:
+
+```text
+224462ce5e3304e3fd0875eeabc829810a894911e3d4091d4e60e67a2687e695
+```
+
+Tracking the hash across rename events revealed the complete file lifecycle:
+
+```text
+Sarah_Chen_Notes.txt
+→ Sarah_Chen_Notes.exe.txt
+→ Sarah_Chen_Notes.exe
+→ PHTG.exe
+```
+
+### Malware Classification
+
+Microsoft Defender classified the sample as:
+
+```text
+Meterpreter
+```
+
+This classification indicates the payload was associated with a post-exploitation framework commonly used for remote access and command execution. :contentReference[oaicite:1]{index=1}
+
+---
+
+# Phase 13 – Defender Evasion
+
+## Objective
+
+Determine why the malware was able to execute.
+
+## Findings
+
+Microsoft Defender detected and quarantined the payload multiple times.
+
+However, the payload later executed successfully because Defender was operating in:
+
+```text
+Passive Mode
+```
+
+Telemetry indicated:
+
+```text
+ReportSource:
+Windows Defender Antivirus passive mode
+```
+
+Passive mode allowed detection events to occur without active prevention or blocking.
+
+### MITRE ATT&CK
+
+| Technique | Description |
+|------------|------------|
+| T1562.001 | Impair Defenses |
+
+---
+
+# Phase 14 – Persistence Mechanism
+
+## Objective
+
+Identify how the malware maintained execution.
+
+## Findings
+
+The malware executed in two phases.
+
+### Initial Execution
+
+```text
+Sarah_Chen_Notes.exe
+```
+
+### Persistence Phase
+
+```text
+PHTG.exe
+```
+
+Later executions were launched through:
+
+```text
+cmd.exe
+```
+
+using the following batch file:
+
+```text
+C:\ProgramData\PHTG\HealthCloud\Launch.bat
+```
+
+This indicates the attacker repurposed existing HealthCloud infrastructure to disguise malicious activity.
+
+### KQL Query
+
+```kql
+DeviceProcessEvents
+| where FileName == "PHTG.exe"
+| project TimeGenerated,
+         FileName,
+         InitiatingProcessFileName,
+         InitiatingProcessCommandLine
+```
+
+### MITRE ATT&CK
+
+| Technique | Description |
+|------------|------------|
+| T1547 | Boot or Logon Autostart Execution |
+
+---
+
+# Phase 15 – Command and Control Activity
+
+## Objective
+
+Identify post-exploitation network communications.
+
+## Findings
+
+Following execution, the malware established outbound communications to:
+
+```text
+173.244.55.130
+```
+
+Connection details:
+
+| Artifact | Value |
+|-----------|-----------|
+| Process | PHTG.exe |
+| Remote IP | 173.244.55.130 |
+| Remote Port | 4444 |
+| Country | Uruguay |
+| Continent | South America |
+
+Port 4444 is commonly associated with Meterpreter reverse-shell activity.
+
+### KQL Query
+
+```kql
+DeviceNetworkEvents
+| where InitiatingProcessFileName == "PHTG.exe"
+| project TimeGenerated,
+         RemoteIP,
+         RemotePort,
+         InitiatingProcessFileName
+```
+
+### MITRE ATT&CK
+
+| Technique | Description |
+|------------|------------|
+| T1071 | Application Layer Protocol |
+| T1105 | Ingress Tool Transfer |
+| T1071.001 | Web Protocols |
+
+---
+
+# Phase 16 – Abuse of Legitimate Infrastructure
+
+## Findings
+
+Rather than creating an entirely new persistence location, the attacker hid malware inside an existing directory associated with the recently deployed HealthCloud service.
+
+Observed location:
+
+```text
+C:\ProgramData\PHTG\HealthCloud\
+```
+
+Legitimate files associated with HealthCloud were observed prior to malware activity, indicating the attacker leveraged trusted infrastructure already present on the host.
+
+This allowed malicious files to blend into normal application activity and reduced the likelihood of detection.
+
+### MITRE ATT&CK
+
+| Technique | Description |
+|------------|------------|
+| T1036.005 | Masquerading as Legitimate Service |
+
 # MITRE ATT&CK Mapping
 
 | Technique | Description |
