@@ -597,6 +597,8 @@ This allowed malicious files to blend into normal application activity and reduc
 |------------|------------|
 | T1036.005 | Masquerading as Legitimate Service |
 
+---
+
 # MITRE ATT&CK Mapping
 
 | Technique | Description |
@@ -606,23 +608,33 @@ This allowed malicious files to blend into normal application activity and reduc
 | T1110 | Brute Force |
 | T1078 | Valid Accounts |
 | T1021.001 | Remote Desktop Protocol |
-| T1589 | Gather Victim Identity Information |
+| T1036 | Masquerading |
+| T1036.005 | Match Legitimate Name or Location |
+| T1562.001 | Impair Defenses |
+| T1547 | Boot or Logon Autostart Execution |
+| T1071 | Application Layer Protocol |
+| T1105 | Ingress Tool Transfer |
 
 ---
 
 # Recommendations
 
-1. Reset credentials associated with administrative accounts.
-2. Review all successful logons originating from Uruguay.
-3. Restrict RDP access through Azure Bastion or VPN.
-4. Enforce MFA for privileged accounts.
-5. Monitor for future foreign logons.
-6. Develop detections for RDP brute-force patterns.
+1. Restrict public exposure of administrative infrastructure and remove unnecessary internet-facing RDP services.
+2. Enforce MFA for all privileged and administrative accounts.
+3. Review successful authentication events originating from unexpected geographic locations.
+4. Investigate systems operating with Microsoft Defender in passive mode and ensure active protection is enabled.
+5. Monitor for suspicious file rename sequences involving double extensions (e.g., `.exe.txt`).
+6. Alert on outbound connections to uncommon remote ports associated with command-and-control activity.
+7. Review application directories for unauthorized executables or persistence mechanisms.
 
 ---
 
 # Conclusion
 
-This threat hunt demonstrated how a seemingly harmless social media post can expose actionable infrastructure details. Investigation confirmed that the exposed virtual machine became the target of internet-wide scanning, brute-force authentication attempts, and successful RDP logons originating from an unexpected geographic region.
+This threat hunt began as an investigation into a publicly shared LinkedIn image that exposed Azure infrastructure details. Analysis revealed extensive external reconnaissance activity, including RDP scanning, brute-force authentication attempts, and successful authentication events originating from Uruguay.
 
-The findings reinforce the importance of exposure management, identity monitoring, and proactive threat hunting when investigating publicly accessible assets.
+Following successful access, the attacker interacted with the system, reviewed internal files, staged a malicious payload using a double-extension masquerading technique, and executed malware later identified by Microsoft Defender as Meterpreter. The payload was ultimately renamed to `PHTG.exe`, launched through a batch-file wrapper, and established outbound communications to infrastructure located in Uruguay over TCP port 4444.
+
+Additionally, the attacker leveraged the legitimate HealthCloud application directory to blend malicious activity into existing organizational infrastructure and maintain persistence.
+
+This investigation demonstrates how seemingly minor information exposure can provide attackers with enough intelligence to progress from reconnaissance to compromise. The findings reinforce the importance of exposure management, identity security, endpoint protection, and proactive threat hunting when defending internet-facing assets.
