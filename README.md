@@ -1,4 +1,4 @@
-# Signal Before the Noise
+# Signals Before the Noise
 ### Threat Hunt Report
 
 **Author:** Sid Taha  
