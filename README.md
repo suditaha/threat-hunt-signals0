@@ -28,7 +28,9 @@ These findings suggest the exposed asset became the target of internet-wide reco
 
 PHTG recently deployed an internal application called HealthCloud. A member of the cloud engineering team publicly posted a workstation photo on LinkedIn that unintentionally exposed Azure infrastructure details. The photo is shown below:
 
+<img width="297" height="600" alt="Screenshot 2026-06-04 at 6 14 06 PM" src="https://github.com/user-attachments/assets/85a00853-9cc5-412f-9922-3d6914a3b7fa" />
 
+<img width="599" height="437" alt="Screenshot 2026-06-04 at 6 15 03 PM" src="https://github.com/user-attachments/assets/a2f8fbb9-4aed-486b-9b5f-b06b3b650b3c" />
 
 Visible information included:
 
