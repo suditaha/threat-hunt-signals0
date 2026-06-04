@@ -19,6 +19,7 @@ Investigation revealed:
 - 646 failed RDP logons
 - Successful RDP authentication activity originating from Uruguay
 - Successful logons using the account `vmadminusername`
+- Execution of a Meterpreter payload disguised as an internal document
 
 These findings suggest the exposed asset became the target of internet-wide reconnaissance and credential attacks following public disclosure.
 
@@ -436,7 +437,7 @@ Microsoft Defender classified the sample as:
 Meterpreter
 ```
 
-This classification indicates the payload was associated with a post-exploitation framework commonly used for remote access and command execution. :contentReference[oaicite:1]{index=1}
+This classification indicates the payload was associated with a post-exploitation framework commonly used for remote access and command execution.
 
 ---
 
@@ -453,7 +454,7 @@ Microsoft Defender detected and quarantined the payload multiple times.
 However, the payload later executed successfully because Defender was operating in:
 
 ```text
-Passive Mode
+passive Mode
 ```
 
 Telemetry indicated:
@@ -595,7 +596,7 @@ This allowed malicious files to blend into normal application activity and reduc
 
 | Technique | Description |
 |------------|------------|
-| T1036.005 | Masquerading as Legitimate Service |
+| T1036.005 | Match Legitimate Name or Location |
 
 ---
 
@@ -633,7 +634,7 @@ This allowed malicious files to blend into normal application activity and reduc
 
 This threat hunt began as an investigation into a publicly shared LinkedIn image that exposed Azure infrastructure details. Analysis revealed extensive external reconnaissance activity, including RDP scanning, brute-force authentication attempts, and successful authentication events originating from Uruguay.
 
-Following successful access, the attacker interacted with the system, reviewed internal files, staged a malicious payload using a double-extension masquerading technique, and executed malware later identified by Microsoft Defender as Meterpreter. The payload was ultimately renamed to `PHTG.exe`, launched through a batch-file wrapper, and established outbound communications to infrastructure located in Uruguay over TCP port 4444.
+Following successful access, the attacker interacted with the system, reviewed internal files, staged a malicious payload using a double-extension masquerading technique, and executed malware later identified by Microsoft Defender as Meterpreter. The payload was ultimately renamed to `PHTG.exe`, executed through `Launch.bat` within the HealthCloud directory, and established outbound command-and-control communications to infrastructure located in Uruguay over TCP port 4444.
 
 Additionally, the attacker leveraged the legitimate HealthCloud application directory to blend malicious activity into existing organizational infrastructure and maintain persistence.
 
